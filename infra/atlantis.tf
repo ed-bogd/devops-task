@@ -5,6 +5,21 @@ resource "kubernetes_namespace" "atlantis" {
   }
 }
 
+# Create Kubernetes secret for sensitive values
+resource "kubernetes_secret" "atlantis_secrets" {
+  metadata {
+    name      = "atlantis-secrets"
+    namespace = kubernetes_namespace.atlantis.metadata[0].name
+  }
+
+  data = {
+    github-token     = var.github_token
+    webhook-secret   = var.atlantis_webhook_secret
+  }
+
+  type = "Opaque"
+}
+
 # Bind Atlantis service account to cluster-admin (simplest approach)
 resource "kubernetes_cluster_role_binding" "atlantis" {
   metadata {
@@ -60,14 +75,12 @@ resource "aws_iam_role_policy_attachment" "atlantis_attach" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
-# Manage template for Atlantis Helm values
+# Manage template for Atlantis Helm values (non-sensitive values only)
 data "template_file" "atlantis_values" {
   template = file("${path.module}/../helm/atlantis.yaml")
   vars = {
-    ATLANTIS_GH_TOKEN       = var.github_token
-    ATLANTIS_WEBHOOK_SECRET = var.atlantis_webhook_secret
-    GITHUB_USER             = var.github_user
-    ATLANTIS_ROLE_ARN       = aws_iam_role.atlantis.arn
+    GITHUB_USER       = var.github_user
+    ATLANTIS_ROLE_ARN = aws_iam_role.atlantis.arn
   }
 }
 
@@ -78,10 +91,27 @@ resource "helm_release" "atlantis" {
   repository = "https://runatlantis.github.io/helm-charts"
   chart      = "atlantis"
   version    = "5.17.2"
+  
+  # Use YAML file for most configuration
   values = [
     data.template_file.atlantis_values.rendered
   ]
-  depends_on = [module.eks]
+
+  # Override only the sensitive values
+  set_sensitive {
+    name  = "github.token"
+    value = var.github_token
+  }
+
+  set_sensitive {
+    name  = "github.secret"
+    value = var.atlantis_webhook_secret
+  }
+
+  depends_on = [
+    module.eks,
+    kubernetes_secret.atlantis_secrets
+  ]
 }
 
 # Data source to fetch the Atlantis service information
