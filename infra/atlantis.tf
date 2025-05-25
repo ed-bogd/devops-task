@@ -26,8 +26,14 @@ data "aws_iam_policy_document" "atlantis_assume" {
 
     condition {
       test     = "StringEquals"
-      variable = "${module.eks.cluster_oidc_issuer_url}:sub"
+      variable = "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:sub"
       values   = ["system:serviceaccount:atlantis:atlantis"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:aud"
+      values   = ["sts.amazonaws.com"]
     }
   }
 }
@@ -36,6 +42,16 @@ data "aws_iam_policy_document" "atlantis_assume" {
 resource "aws_iam_role_policy_attachment" "atlantis_attach" {
   role       = aws_iam_role.atlantis.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+# Add output to verify the role ARN
+output "atlantis_role_arn" {
+  value = aws_iam_role.atlantis.arn
+}
+
+# Add output to verify OIDC issuer
+output "eks_oidc_issuer_url" {
+  value = module.eks.cluster_oidc_issuer_url
 }
 
 # Manage template for Atlantis Helm values
