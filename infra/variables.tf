@@ -112,5 +112,5 @@ variable "my_ip_address" {
   description = "Your public IP address for security group rules"
   type        = string
   sensitive   = true
-  default = ""
+  default = "0.0.0/0"
 }
