@@ -1,0 +1,2 @@
+github_token              = "ghp_"
+atlantis_webhook_secret = "xxx"

@@ -1,5 +1,13 @@
-.env
-.terraform*
-.tfstate*
+# Terraform tests
 test.tf
 test_var.tf
+
+# Terraform files
+.terraform*
+.tfstate*
+*.tfstate
+*.tfvars
+
+# Local environment files
+.env
+env.*

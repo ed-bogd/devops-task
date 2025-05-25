@@ -1,0 +1,29 @@
+github:
+  user: "${GITHUB_USER}"
+  token: "${ATLANTIS_GH_TOKEN}"
+  secret: "${ATLANTIS_WEBHOOK_SECRET}"
+
+orgAllowlist: github.com/${GITHUB_USER}/*
+
+serviceAccount:
+  create: true
+  name: atlantis
+  annotations:
+    eks.amazonaws.com/role-arn: "${ATLANTIS_ROLE_ARN}"
+
+service:
+  type: LoadBalancer
+  port: 80
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    service.beta.kubernetes.io/aws-load-balancer-type: "classic"
+
+ingress:
+  enabled: false
+
+volumeClaim:
+  enabled: true
+  dataStorage: 5Gi
+  storageClassName: gp2
+  accessModes: ["ReadWriteOnce"]
