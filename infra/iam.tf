@@ -93,7 +93,7 @@ resource "aws_iam_role_policy_attachment" "eks_admin_role_policy" {
 }
 
 ###
-# eks-readonly IAM user
+# eks-read-only IAM user
 ###
 
 # eks-readonly IAM user
