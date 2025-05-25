@@ -1,5 +1,7 @@
 github:
   user: "${GITHUB_USER}"
+  token: ""
+  secret: ""
 
 orgAllowlist: github.com/${GITHUB_USER}/*
 
