@@ -98,16 +98,19 @@ variable "atlantis_webhook_secret" {
   description = "GitHub webhook secret for Atlantis"
   type        = string
   sensitive   = true
+  default = ""
 }
 
 variable "github_token" {
   description = "GitHub token for Atlantis"
   type        = string
   sensitive   = true
+  default = ""
 }
 
 variable "my_ip_address" {
   description = "Your public IP address for security group rules"
   type        = string
   sensitive   = true
+  default = ""
 }
