@@ -1,7 +1,5 @@
 github:
   user: "${GITHUB_USER}"
-  token: "${ATLANTIS_GH_TOKEN}"
-  secret: "${ATLANTIS_WEBHOOK_SECRET}"
 
 orgAllowlist: github.com/${GITHUB_USER}/*
 
