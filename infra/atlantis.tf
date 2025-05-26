@@ -12,6 +12,27 @@ resource "aws_iam_role" "atlantis" {
   assume_role_policy = data.aws_iam_policy_document.atlantis_assume.json
 }
 
+# Grant cluster-admin to Atlantis service account
+resource "kubernetes_cluster_role_binding" "atlantis_cluster_admin" {
+  metadata {
+    name = "atlantis-cluster-admin"
+  }
+  
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
+  }
+  
+  subject {
+    kind      = "ServiceAccount"
+    name      = "atlantis"
+    namespace = kubernetes_namespace.atlantis.metadata[0].name
+  }
+
+  depends_on = [module.eks]
+}
+
 # Assume role policy document for Atlantis
 data "aws_iam_policy_document" "atlantis_assume" {
   statement {
