@@ -25,7 +25,7 @@ resource "aws_iam_role" "eks_admin" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+          AWS = "*"
         },
         Action = "sts:AssumeRole"
       }
@@ -92,22 +92,23 @@ resource "aws_iam_role_policy_attachment" "eks_admin_role_policy" {
   policy_arn = aws_iam_policy.eks_admin_policy.arn
 }
 
+
 ###
 # eks-readonly IAM user
 ###
 
 # eks-readonly IAM user
-# resource "aws_iam_user" "eks_read_only" {
-#   name = "eks-read-only-user"
-#   tags = {
-#     Name = "eks-read-only"
-#   }
-# }
+resource "aws_iam_user" "eks_read_only" {
+  name = "eks-read-only-user"
+  tags = {
+    Name = "eks-read-only"
+  }
+}
 
 # Create an IAM access key for the eks-read-only user
-# resource "aws_iam_access_key" "eks_read_only" {
-#   user = aws_iam_user.eks_read_only.name
-# }
+resource "aws_iam_access_key" "eks_read_only" {
+  user = aws_iam_user.eks_read_only.name
+}
 
 # eks-readonly IAM role
 resource "aws_iam_role" "eks_read_only" {
@@ -119,7 +120,7 @@ resource "aws_iam_role" "eks_read_only" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+          AWS = "*"
         },
         Action = "sts:AssumeRole"
       }
@@ -132,21 +133,21 @@ resource "aws_iam_role" "eks_read_only" {
 }
 
 # Allow the read-only user to assume the read-only role
-# resource "aws_iam_user_policy" "eks_read_only_assume_role" {
-#   name = "eks-read-only-assume-role"
-#   user = aws_iam_user.eks_read_only.name
+resource "aws_iam_user_policy" "eks_read_only_assume_role" {
+  name = "eks-read-only-assume-role"
+  user = aws_iam_user.eks_read_only.name
 
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect = "Allow"
-#         Action = "sts:AssumeRole"
-#         Resource = aws_iam_role.eks_read_only.arn
-#       }
-#     ]
-#   })
-# }
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = "sts:AssumeRole"
+        Resource = aws_iam_role.eks_read_only.arn
+      }
+    ]
+  })
+}
 
 # Custom read-only policy for EKS using wildcards
 resource "aws_iam_policy" "eks_read_only_policy" {
@@ -198,4 +199,29 @@ resource "aws_iam_policy" "eks_read_only_policy" {
 resource "aws_iam_role_policy_attachment" "eks_read_only_custom" {
   role       = aws_iam_role.eks_read_only.name
   policy_arn = aws_iam_policy.eks_read_only_policy.arn
+}
+
+# Map IAM roles to Kubernetes RBAC
+resource "kubernetes_config_map_v1_data" "aws_auth" {
+  metadata {
+    name      = "aws-auth"
+    namespace = "kube-system"
+  }
+
+  data = {
+    mapRoles = yamlencode([
+      {
+        rolearn  = aws_iam_role.eks_admin.arn
+        username = "eks-admin-user"
+        groups   = ["system:masters"]
+      },
+      {
+        rolearn  = aws_iam_role.eks_read_only.arn
+        username = "eks-readonly-user"
+        groups   = ["readers"]
+      }
+    ])
+  }
+
+  depends_on = [module.eks]
 }

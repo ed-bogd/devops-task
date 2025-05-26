@@ -75,32 +75,6 @@ output "eks_oidc_issuer_url" {
   value = module.eks.cluster_oidc_issuer_url
 }
 
-# Local to determine if we should create secrets
-locals {
-  create_secrets = var.github_token != "" && var.atlantis_webhook_secret != ""
-}
-
-# Create Kubernetes secret for Atlantis VCS credentials only if vars are provided
-resource "kubernetes_secret" "atlantis_vcs" {
-  count = local.create_secrets ? 1 : 0
-  
-  metadata {
-    name      = "atlantis-vcs"
-    namespace = kubernetes_namespace.atlantis.metadata[0].name
-  }
-
-  data = {
-    github_token    = var.github_token
-    github_secret  = var.atlantis_webhook_secret
-  }
-
-  type = "Opaque"
-
-  lifecycle {
-    ignore_changes = [data]
-  }
-}
-
 # Update the template data to use conditional reference
 data "template_file" "atlantis_values" {
   template = file("${path.module}/../helm/atlantis.yaml")
@@ -108,7 +82,9 @@ data "template_file" "atlantis_values" {
   vars = {
     GITHUB_USER       = var.github_user
     ATLANTIS_ROLE_ARN = aws_iam_role.atlantis.arn
-    VCS_SECRET_NAME   = local.create_secrets ? kubernetes_secret.atlantis_vcs[0].metadata[0].name : "atlantis-vcs"
+    GITHUB_TOKEN    = var.github_token
+    GITHUB_REPO      = var.github_repo
+    ATLANTIS_WEBHOOK_SECRET = var.atlantis_webhook_secret
   }
 }
 

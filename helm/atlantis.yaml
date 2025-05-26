@@ -1,7 +1,7 @@
 github:
   user: "${GITHUB_USER}"
-
-vcsSecretName: ${VCS_SECRET_NAME}
+  token: "${GITHUB_TOKEN}"
+  secret: "${ATLANTIS_WEBHOOK_SECRET}"
 
 orgAllowlist: github.com/${GITHUB_USER}/*
 
