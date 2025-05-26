@@ -1,7 +1,7 @@
 github:
   user: "${GITHUB_USER}"
-  token: ""
-  secret: ""
+
+vcsSecretName: ${VCS_SECRET_NAME}
 
 orgAllowlist: github.com/${GITHUB_USER}/*
 
